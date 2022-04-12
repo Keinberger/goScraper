@@ -12,14 +12,6 @@ func logError(err error, msg string) {
 	}
 }
 
-// panicError() panics if err != nil, printing msg before the panic
-func panicError(err error, msg string) {
-	if err != nil {
-		fmt.Println(msg)
-		panic(err)
-	}
-}
-
 // formatString replaces str with a func specified in funcs, if str contains the map key of funcs
 // one may use an array of constant values that can be passed into the function, as well, hence
 // a function has to have a string as the first argument (where str gets passed in) and an array
