@@ -55,29 +55,11 @@ type LookUpElement struct {
 
 // Website defines the website data type for the scraper
 type Website struct {
-	Name              string          `json:"name"`
-	HourStartScraping int             `json:"hourStartScraping"`
-	HourStopScraping  int             `json:"hourStopScraping"`
-	UpdateInterval    int             `json:"updateInterval"`
-	Seperator         string          `json:"seperator"`
-	URL               string          `json:"URL"`
-	LookUpElements    []LookUpElement `json:"lookUpElements"`
-	Cache             string
-}
-
-// MinUntil returns the time.Duration until time.Time t
-func (w *Website) MinUntil(t time.Time) time.Duration {
-	var minutes int
-
-	minUntilH := 60 - t.Minute()
-	switch {
-	case w.HourStartScraping > t.Hour():
-		minutes += minUntilH + (w.HourStartScraping-t.Hour()-1)*60
-	case t.Hour() >= w.HourStopScraping:
-		minutes += minUntilH + (24-t.Hour()-1)*60 + w.HourStartScraping*60
-	}
-
-	return time.Duration(minutes) * time.Minute
+	Name           string          `json:"name"`
+	Seperator      string          `json:"seperator"`
+	URL            string          `json:"URL"`
+	LookUpElements []LookUpElement `json:"lookUpElements"`
+	Cache          string
 }
 
 // Scrape scrapes the website w, returning true and the string of the element, if found
@@ -97,7 +79,7 @@ func (w *Website) Scrape(funcs map[string]interface{}, cons ...interface{}) (boo
 		if body = GetHTMLdata(pW.URL); len(body) > 0 {
 			break
 		}
-		fmt.Printf("Server: ERROR WHILE FINDING BODY OF (%v)\n", pW.URL)
+		fmt.Printf("scrape(): ERROR WHILE FINDING BODY OF (%v)\n", pW.URL)
 		time.Sleep(time.Second * 5)
 	}
 	// fmt.Printf("Server: Len of finished body (%v) equals: %v\n", w.URL, len(body))
