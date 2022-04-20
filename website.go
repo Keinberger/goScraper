@@ -99,7 +99,7 @@ func (w *Website) Scrape(funcs map[string]interface{}, cons ...interface{}) (boo
 	return len(finishedElements) > 0, strings.Trim(entireString, pW.Seperator)
 }
 
-// ScrapeElement scrapes the html body for a notificationElement notEl and returns true and the string of the element when found
+// ScrapeElement scrapes the html body for a LookUpElement lookEl and returns true and the string of the element when found
 func ScrapeElement(body string, lookEl LookUpElement) (bool, string) {
 	if lookEl.NotFound != "" {
 		if strings.Contains(body, lookEl.NotFound) {
