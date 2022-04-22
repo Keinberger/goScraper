@@ -23,10 +23,10 @@ func logError(err error, msg string) {
 func formatString(str string, funcs map[string]interface{}, constants []interface{}) string {
 	for k, v := range funcs {
 		if strings.Contains(str, k) {
-			if _, ok := v.(func(string, []interface{}) string); ok {
-				str = v.(func(string, []interface{}) string)(str, constants)
-			} else if _, ok := v.(func(string) string); ok {
-				str = v.(func(string) string)(str)
+			if fun, ok := v.(func(string, []interface{}) string); ok {
+				str = fun(str, constants)
+			} else if fun, ok := v.(func(string) string); ok {
+				str = fun(str)
 			}
 		}
 	}
