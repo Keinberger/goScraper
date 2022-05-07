@@ -115,7 +115,7 @@ func ScrapeElement(body string, lookEl LookUpElement) (bool, string) {
 
 	final := body
 	if len(lookEl.Elements) > 0 {
-		if finalEl := GetNestedHTMLElement(body, lookEl.Elements); finalEl != "" {
+		if finalEl, err := GetNestedHTMLElement(body, lookEl.Elements); err != nil && finalEl != "" {
 			final = finalEl
 		} else {
 			fmt.Println("scrapeElement(): Element could not be found by scraper")

@@ -74,25 +74,30 @@ func renderNode(n *html.Node) string {
 }
 
 // GetContentInsideElement returns the inside of an html element
-func GetContentInsideElement(htm string, el Element) string {
+func GetContentInsideElement(htm string, el Element) (string, error) {
 	doc, _ := html.Parse(strings.NewReader(htm))
 	bn, beg, err := GetHTMLElementContent(doc, el)
 	if err != nil {
 		logError(err, "Error getting html element: ")
-		return ""
+		return "", err
 	}
-	return strings.Trim(renderNode(bn), beg)
+	return strings.Trim(renderNode(bn), beg), nil
 }
 
 // GetNestedHTMLElement returns the content of a html element inside of a bigger one
-func GetNestedHTMLElement(htm string, elements []Element) string {
-	var output string
+func GetNestedHTMLElement(htm string, elements []Element) (output string, err error) {
 	for _, v := range elements {
 		if output != "" {
-			output = GetContentInsideElement(output, v)
+			output, err = GetContentInsideElement(output, v)
+			if err != nil {
+				return "", err
+			}
 		} else {
-			output = GetContentInsideElement(htm, v)
+			output, err = GetContentInsideElement(htm, v)
+			if err != nil {
+				return "", err
+			}
 		}
 	}
-	return output
+	return
 }
