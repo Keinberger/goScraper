@@ -1,6 +1,7 @@
 package scraper
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 )
@@ -35,11 +36,11 @@ func formatString(str string, funcs map[string]interface{}, constants []interfac
 
 // checkKey checks if the key exists inside of the string array strArr
 // one may use -1 as the key to return the last element of the array
-func checkKey(strArr []string, key int) string {
+func checkKey(strArr []string, key int) (string, error) {
 	if key >= len(strArr) {
-		return ""
+		return "", errors.New("key is out of range")
 	} else if key == -1 {
-		return strArr[len(strArr)-1]
+		return strArr[len(strArr)-1], nil
 	}
-	return strArr[key]
+	return strArr[key], nil
 }

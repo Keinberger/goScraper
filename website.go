@@ -1,10 +1,10 @@
 package scraper
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 	"strings"
-	"time"
 )
 
 // SplitAfter defines the data structure in order to be able to split the finished element
@@ -63,7 +63,7 @@ type Website struct {
 }
 
 // Scrape scrapes the website w, returning true and the string of the element, if found
-func (w *Website) Scrape(funcs map[string]interface{}, cons ...interface{}) (bool, string) {
+func (w *Website) Scrape(funcs map[string]interface{}, cons ...interface{}) (string, error) {
 	pW := *w // parsedWebsite (copy of website value)
 	if len(funcs) > 0 {
 		vls := reflect.ValueOf(&pW).Elem()
@@ -75,19 +75,16 @@ func (w *Website) Scrape(funcs map[string]interface{}, cons ...interface{}) (boo
 	}
 
 	var body string
-	for i := 0; i < 5; i++ {
-		if body = GetHTMLdata(pW.URL); len(body) > 0 {
-			break
-		}
-		fmt.Printf("scrape(): ERROR WHILE FINDING BODY OF (%v)\n", pW.URL)
-		time.Sleep(time.Second * 5)
+	if body = GetHTMLdata(pW.URL); len(body) == 0 {
+		return "", fmt.Errorf("error while finding body of %v", pW.URL)
 	}
-	// fmt.Printf("Server: Len of finished body (%v) equals: %v\n", w.URL, len(body))
 
 	var finishedElements []string
 	for _, notEl := range pW.LookUpElements {
-		if found, contains := ScrapeElement(body, notEl); found {
+		if contains, err := ScrapeElement(body, notEl); err == nil {
 			finishedElements = append(finishedElements, contains)
+		} else {
+			return "", err
 		}
 	}
 
@@ -96,21 +93,24 @@ func (w *Website) Scrape(funcs map[string]interface{}, cons ...interface{}) (boo
 		entireString += v + pW.Seperator
 	}
 
-	return len(finishedElements) > 0, strings.Trim(entireString, pW.Seperator)
+	return strings.Trim(entireString, pW.Seperator), nil
 }
 
 // ScrapeElement scrapes the html body for a LookUpElement lookEl and returns true and the string of the element when found
-func ScrapeElement(body string, lookEl LookUpElement) (bool, string) {
+func ScrapeElement(body string, lookEl LookUpElement) (string, error) {
 	if lookEl.NotFound != "" {
 		if strings.Contains(body, lookEl.NotFound) {
-			fmt.Printf("scrapeElement(): Website contains NotFound (%v)\n", lookEl.NotFound)
-			return false, ""
+			return "", fmt.Errorf("website contains NotFound (%v)", lookEl.NotFound)
 		}
 	}
 
+	var err error
 	for _, v := range lookEl.SplitAt {
 		split := strings.Split(body, v.Phrase)
-		body = checkKey(split, v.Key)
+		body, err = checkKey(split, v.Key)
+		if err != nil {
+			return "", err
+		}
 	}
 
 	final := body
@@ -124,8 +124,7 @@ func ScrapeElement(body string, lookEl LookUpElement) (bool, string) {
 
 	if lookEl.HasToContain != "" {
 		if !strings.Contains(final, lookEl.HasToContain) {
-			fmt.Printf("scrapeElement(): Website does not contain HasToContain (%v)\n", lookEl.HasToContain)
-			return false, ""
+			return "", fmt.Errorf("website does not contain HasToContain (%v)", lookEl.HasToContain)
 		}
 	}
 
@@ -136,7 +135,11 @@ func ScrapeElement(body string, lookEl LookUpElement) (bool, string) {
 		split := strings.Split(final, v.Phrase)
 		final = ""
 		for _, key := range v.Keys {
-			final += checkKey(split, key) + v.Seperator
+			finall, err := checkKey(split, key)
+			if err != nil {
+				return "", err
+			}
+			final += finall + v.Seperator
 		}
 		final = strings.Trim(final, v.Seperator)
 	}
@@ -163,8 +166,8 @@ func ScrapeElement(body string, lookEl LookUpElement) (bool, string) {
 	}
 
 	if len(final) > 0 && final != lookEl.AddBefore && final != lookEl.AddAfter {
-		return true, final
+		return final, nil
 	}
 
-	return false, ""
+	return "", errors.New("could not find element in body")
 }
