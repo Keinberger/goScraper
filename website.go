@@ -2,71 +2,64 @@ package scraper
 
 import (
 	"errors"
-	"fmt"
 	"reflect"
 	"strings"
+
+	"golang.org/x/net/html"
 )
-
-// SplitAfter defines the data structure in order to be able to split the finished element
-type SplitAfter struct {
-	Phrase    string `json:"phrase"`
-	Keys      []int  `json:"keys"`
-	Seperator string `json:"seperator"`
-}
-
-// Split defines the data structure for splitting the html code at a certain phrase
-type Split struct {
-	Phrase string `json:"phrase"`
-	Key    int    `json:"key"`
-}
 
 // ReplaceObj defines the data structure for an object, that has to be replaced
 type ReplaceObj struct {
-	ToReplace string `json:"replace"`
-	With      string `json:"with"`
+	ToBeReplaced string `json:"toBeReplaced"`
+	Replacement  string `json:"replacement"`
+}
+
+// FormatSettings defines the data structure for optional formatting settings of a LookUpElement
+type FormatSettings struct {
+	Replacements []ReplaceObj `json:"replacements"`
+	Trim         []string     `json:"trim"`
+	AddBefore    string       `json:"addBefore"`
+	AddAfter     string       `json:"addAfter"`
+}
+
+// Settings defines the data structure for optional settings of a LookUpElement
+type Settings struct {
+	FormatSettings           FormatSettings `json:"formatting"`
+	DisallowRecursiveContent bool           `json:"disallowRecursiveContent"`
 }
 
 // Tag defines the data structure for an HTML Tag
 type Tag struct {
-	Name  string `json:"name"`
+	Typ   string `json:"typ"`
 	Value string `json:"value"`
 }
 
 // Element defines the data structure for an HTML element
 type Element struct {
-	Typ string `json:"typ"`
-	Tag `json:"tag"`
+	Typ   string `json:"typ"`
+	Tags  []Tag  `json:"tags"`
+	Index int    `json:"index"`
 }
 
 // LookUpElement defines the data structure for an element to be looked up by the scraper
 type LookUpElement struct {
-	SplitAt      []Split      `json:"splitAt"`
-	SplitAfter   []SplitAfter `json:"splitAfter"`
-	Replacements []ReplaceObj `json:"replacements"`
-	Elements     []Element    `json:"elements"`
-	NotFound     string       `json:"notFound"`
-	HasToContain string       `json:"lastElementHasToContain"`
-	Trim         []string     `json:"trim"`
-	LastIsURL    bool         `json:"lastIsURL"`
-	FollowURL    *Website     `json:"followURL"`
-	AddBefore    string       `json:"addBefore"`
-	AddAfter     string       `json:"addAfter"`
+	Element          Element  `json:"element"` // make one element
+	Settings         Settings `json:"settings"`
+	ContentIsWebsite *Website `json:"followURL"`
 }
 
 // Website defines the website data type for the scraper
 type Website struct {
-	Name           string          `json:"name"`
 	Seperator      string          `json:"seperator"`
 	URL            string          `json:"URL"`
 	LookUpElements []LookUpElement `json:"lookUpElements"`
-	Cache          string
 }
 
-// Scrape scrapes the website w, returning true and the string of the element, if found
+// Scrape scrapes the website w, returning the found elements in a string each seperated by Seperator
 func (w *Website) Scrape(funcs map[string]interface{}, cons ...interface{}) (string, error) {
-	pW := *w // parsedWebsite (copy of website value)
+	copyW := *w // copyWebsite (copy of website value)
 	if len(funcs) > 0 {
-		vls := reflect.ValueOf(&pW).Elem()
+		vls := reflect.ValueOf(&copyW).Elem()
 		for i := 0; i < vls.NumField(); i++ {
 			if vls.Field(i).Kind() == reflect.String {
 				vls.Field(i).Set(reflect.ValueOf(formatString(vls.Field(i).String(), funcs, cons)))
@@ -74,100 +67,66 @@ func (w *Website) Scrape(funcs map[string]interface{}, cons ...interface{}) (str
 		}
 	}
 
-	var body string
-	if body = GetHTMLdata(pW.URL); len(body) == 0 {
-		return "", fmt.Errorf("error while finding body of %v", pW.URL)
+	node, err := GetHTMLNode(copyW.URL)
+	if err != nil {
+		return "", err
 	}
 
-	var finishedElements []string
-	for _, notEl := range pW.LookUpElements {
-		if contains, err := ScrapeElement(body, notEl); err == nil {
-			finishedElements = append(finishedElements, contains)
-		} else {
+	var elements []string
+	for _, el := range copyW.LookUpElements {
+		if content, err := el.ScrapeTreeForElement(node); err != nil {
 			return "", err
+		} else {
+			elements = append(elements, content)
 		}
 	}
 
-	var entireString string
-	for _, v := range finishedElements {
-		entireString += v + pW.Seperator
+	var elementString string
+	for k, v := range elements {
+		elementString += v
+		if k != len(elements)-1 {
+			elementString += copyW.Seperator
+		}
 	}
 
-	return strings.Trim(entireString, pW.Seperator), nil
+	return elementString, nil
 }
 
-// ScrapeElement scrapes the html body for a LookUpElement lookEl and returns true and the string of the element when found
-func ScrapeElement(body string, lookEl LookUpElement) (string, error) {
-	if lookEl.NotFound != "" {
-		if strings.Contains(body, lookEl.NotFound) {
-			return "", fmt.Errorf("website contains NotFound (%v)", lookEl.NotFound)
-		}
+// ScrapeTreeForElement scraped the node tree for a lookUpElement.Element and formats the content of it accordingly
+func (e *LookUpElement) ScrapeTreeForElement(nodeTree *html.Node) (content string, err error) {
+	nodes, err := e.Element.GetElementNodes(nodeTree)
+	if err != nil {
+		return "", err
 	}
 
-	var err error
-	for _, v := range lookEl.SplitAt {
-		split := strings.Split(body, v.Phrase)
-		body, err = checkKey(split, v.Key)
-		if err != nil {
-			return "", err
-		}
+	// no node found or index out of range
+	if len(nodes)-1 < e.Element.Index {
+		return "", errors.New("element index out of range or no node found")
+	}
+	content = GetTextOfNode(nodes[e.Element.Index], e.Settings.DisallowRecursiveContent)
+
+	for _, r := range e.Settings.FormatSettings.Replacements {
+		content = strings.ReplaceAll(content, r.ToBeReplaced, r.Replacement)
 	}
 
-	final := body
-	if len(lookEl.Elements) > 0 {
-		if finalEl, err := GetNestedHTMLElement(body, lookEl.Elements); err != nil && finalEl != "" {
-			final = finalEl
-		} else {
-			return "", errors.New("element could not be found by scraper")
-		}
-	}
-
-	if lookEl.HasToContain != "" {
-		if !strings.Contains(final, lookEl.HasToContain) {
-			return "", fmt.Errorf("website does not contain HasToContain (%v)", lookEl.HasToContain)
-		}
-	}
-
-	for _, v := range lookEl.Trim {
-		final = strings.Trim(final, v)
-	}
-	for _, v := range lookEl.SplitAfter {
-		split := strings.Split(final, v.Phrase)
-		final = ""
-		for _, key := range v.Keys {
-			finall, err := checkKey(split, key)
-			if err != nil {
-				return "", err
-			}
-			final += finall + v.Seperator
-		}
-		final = strings.Trim(final, v.Seperator)
-	}
-
-	for _, replacement := range lookEl.Replacements {
-		final = strings.ReplaceAll(final, replacement.ToReplace, replacement.With)
+	for _, v := range e.Settings.FormatSettings.Trim {
+		content = strings.Trim(content, v)
 	}
 
 	// add changes here
 
-	if len(lookEl.AddAfter) > 0 {
-		final += lookEl.AddAfter
+	if len(e.Settings.FormatSettings.AddAfter) > 0 {
+		content += e.Settings.FormatSettings.AddAfter
 	}
 
-	if len(lookEl.AddBefore) > 0 {
-		final = lookEl.AddBefore + final
+	if len(e.Settings.FormatSettings.AddBefore) > 0 {
+		content = e.Settings.FormatSettings.AddBefore + content
 	}
 
-	final = strings.Trim(final, " ")
-
-	if lookEl.LastIsURL {
-		lookEl.FollowURL.URL = final
-		return lookEl.FollowURL.Scrape(make(map[string]interface{}, 0))
+	if e.ContentIsWebsite != nil {
+		e.ContentIsWebsite.URL = content
+		return e.ContentIsWebsite.Scrape(make(map[string]interface{}, 0))
 	}
 
-	if len(final) > 0 && final != lookEl.AddBefore && final != lookEl.AddAfter {
-		return final, nil
-	}
-
-	return "", errors.New("could not find element in body")
+	return content, nil
 }
