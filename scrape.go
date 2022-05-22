@@ -1,7 +1,6 @@
 package scraper
 
 import (
-	"errors"
 	"reflect"
 	"strings"
 
@@ -36,16 +35,16 @@ type Tag struct {
 
 // Element defines the data structure for an HTML element
 type Element struct {
-	Typ   string `json:"typ"`
-	Tags  []Tag  `json:"tags"`
-	Index int    `json:"index"`
+	Typ  string `json:"typ"`
+	Tags []Tag  `json:"tags"`
 }
 
 // LookUpElement defines the data structure for an element to be looked up by the scraper
 type LookUpElement struct {
-	Element          Element  `json:"element"` // make one element
-	Settings         Settings `json:"settings"`
-	ContentIsWebsite *Website `json:"followURL"`
+	Element            `json:"element"` // make one element
+	Settings           `json:"settings"`
+	ContentIsFollowURL *Website `json:"followURL"`
+	Index              int      `json:"index"`
 }
 
 // Website defines the website data type for the scraper
@@ -56,24 +55,28 @@ type Website struct {
 }
 
 // Scrape scrapes the website w, returning the found elements in a string each seperated by Seperator
-func (w *Website) Scrape(funcs map[string]interface{}, cons ...interface{}) (string, error) {
-	copyW := *w // copyWebsite (copy of website value)
-	if len(funcs) > 0 {
-		vls := reflect.ValueOf(&copyW).Elem()
+func (w Website) Scrape(funcs *map[string]interface{}, vars ...interface{}) (string, error) {
+	if funcs != nil {
+		vls := reflect.ValueOf(&w).Elem()
 		for i := 0; i < vls.NumField(); i++ {
 			if vls.Field(i).Kind() == reflect.String {
-				vls.Field(i).Set(reflect.ValueOf(formatString(vls.Field(i).String(), funcs, cons)))
+				vls.Field(i).Set(reflect.ValueOf(formatString(vls.Field(i).String(), *funcs, vars...)))
 			}
 		}
 	}
 
-	node, err := GetHTMLNode(copyW.URL)
+	htmlData, err := GetHTML(w.URL)
+	if err != nil {
+		return "", err
+	}
+
+	node, err := GetHTMLNode(htmlData)
 	if err != nil {
 		return "", err
 	}
 
 	var elements []string
-	for _, el := range copyW.LookUpElements {
+	for _, el := range w.LookUpElements {
 		if content, err := el.ScrapeTreeForElement(node); err != nil {
 			return "", err
 		} else {
@@ -85,7 +88,7 @@ func (w *Website) Scrape(funcs map[string]interface{}, cons ...interface{}) (str
 	for k, v := range elements {
 		elementString += v
 		if k != len(elements)-1 {
-			elementString += copyW.Seperator
+			elementString += w.Seperator
 		}
 	}
 
@@ -96,14 +99,15 @@ func (w *Website) Scrape(funcs map[string]interface{}, cons ...interface{}) (str
 func (e *LookUpElement) ScrapeTreeForElement(nodeTree *html.Node) (content string, err error) {
 	nodes, err := e.Element.GetElementNodes(nodeTree)
 	if err != nil {
-		return "", err
+		return
 	}
 
 	// no node found or index out of range
-	if len(nodes)-1 < e.Element.Index {
-		return "", errors.New("element index out of range or no node found")
+	if len := len(nodes) - 1; len < e.Index {
+		return "", newErr(ErrIdxOutOfRange, "element index out of range")
 	}
-	content = GetTextOfNode(nodes[e.Element.Index], e.Settings.DisallowRecursiveContent)
+
+	content = GetTextOfNode(nodes[e.Index], e.Settings.DisallowRecursiveContent)
 
 	for _, r := range e.Settings.FormatSettings.Replacements {
 		content = strings.ReplaceAll(content, r.ToBeReplaced, r.Replacement)
@@ -123,9 +127,9 @@ func (e *LookUpElement) ScrapeTreeForElement(nodeTree *html.Node) (content strin
 		content = e.Settings.FormatSettings.AddBefore + content
 	}
 
-	if e.ContentIsWebsite != nil {
-		e.ContentIsWebsite.URL = content
-		return e.ContentIsWebsite.Scrape(make(map[string]interface{}, 0))
+	if e.ContentIsFollowURL != nil {
+		e.ContentIsFollowURL.URL = content
+		return e.ContentIsFollowURL.Scrape(nil)
 	}
 
 	return content, nil

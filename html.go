@@ -2,7 +2,6 @@ package scraper
 
 import (
 	"bytes"
-	"errors"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -11,8 +10,8 @@ import (
 	"golang.org/x/net/html"
 )
 
-// GetHTMLBody returns the HTML-body of the html data at URL
-func GetHTMLBody(URL string) (string, error) {
+// GetHTML returns the HTML-body of the html data at URL
+func GetHTML(URL string) (string, error) {
 	resp, err := http.Get(URL)
 	if err != nil {
 		return "", err
@@ -27,13 +26,9 @@ func GetHTMLBody(URL string) (string, error) {
 	return string(html), nil
 }
 
-// GetHTMLNode returns a node tree representing html data at URL
-func GetHTMLNode(URL string) (*html.Node, error) {
-	htmlData, err := GetHTMLBody(URL)
-	if err != nil {
-		return nil, err
-	}
-	return html.Parse(strings.NewReader(htmlData))
+// GetHTMLNode returns a node tree representing html data
+func GetHTMLNode(data string) (*html.Node, error) {
+	return html.Parse(strings.NewReader(data))
 }
 
 // GetElementNodes returns an array of html.Node iniside of doc having the same attributes as element E
@@ -51,14 +46,11 @@ func (e *Element) GetElementNodes(doc *html.Node) ([]*html.Node, error) {
 					}
 				}
 			}
-			if len(e.Tags) == foundTags { // has found all tags, return node
-				return append(elements, node)
+			if len(e.Tags) == foundTags { // has found all tags of node
+				elements = append(elements, node)
 			}
 		}
-		if child := node.FirstChild; child != nil {
-			elements = append(elements, crawler(child)...)
-		}
-		for child := node.FirstChild; child != nil; child = child.NextSibling {
+		for child := node.FirstChild; child != nil; child = child.NextSibling { // looking for nodes inside of all other nodes
 			elements = append(elements, crawler(child)...)
 		}
 		return elements
@@ -66,7 +58,7 @@ func (e *Element) GetElementNodes(doc *html.Node) ([]*html.Node, error) {
 	if el := crawler(doc); len(el) > 0 {
 		return el, nil
 	}
-	return nil, errors.New("missing " + e.Typ + " in the node tree")
+	return nil, newErr(ErrMissingElement, "missing "+e.Typ+" in the node tree")
 }
 
 // RenderNode converts a rendered html into string
@@ -78,15 +70,14 @@ func RenderNode(n *html.Node) string {
 }
 
 // GetTextOfNode returns the inside of an html element
-func GetTextOfNode(node *html.Node, notRecursive bool) string {
-	var finished string
+func GetTextOfNode(node *html.Node, notRecursive bool) (text string) {
 	if node.Type == html.TextNode {
-		finished += node.Data
+		text += node.Data
 	}
 	if !notRecursive {
 		for c := node.FirstChild; c != nil; c = c.NextSibling {
-			finished += GetTextOfNode(c, notRecursive)
+			text += GetTextOfNode(c, notRecursive)
 		}
 	}
-	return finished
+	return
 }
