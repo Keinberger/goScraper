@@ -2,7 +2,6 @@ package scraper
 
 import (
 	"bytes"
-	"errors"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -11,88 +10,74 @@ import (
 	"golang.org/x/net/html"
 )
 
-// GetHTMLdata returns the HTML-body of a website
-func GetHTMLdata(url string) string {
-	resp, err := http.Get(url)
+// GetHTML returns the HTML data of URL
+func GetHTML(URL string) (string, error) {
+	resp, err := http.Get(URL)
 	if err != nil {
-		logError(err, "Could not fetch data from: "+url)
-		return ""
+		return "", err
 	}
 	defer resp.Body.Close()
 
 	html, err := ioutil.ReadAll(resp.Body)
-	logError(err, "Could not get HTML data from: "+url)
+	if err != nil {
+		return "", nil
+	}
 
-	return string(html)
+	return string(html), nil
 }
 
-// GetHTMLElementContent returns the content of an HTML element including the HTML tags of that element
-func GetHTMLElementContent(doc *html.Node, el Element) (*html.Node, string, error) {
-	var content *html.Node
-	var container string
-	var crawler func(*html.Node)
-	crawler = func(node *html.Node) {
-		if node.Type == html.ElementNode && node.Data == el.Typ {
-			if el.Tag != (Tag{}) {
-				for _, e := range node.Attr {
-					if e.Key == el.Tag.Name && e.Val == el.Tag.Value {
-						container = `<` + el.Typ + ` ` + el.Tag.Name + `="` + el.Tag.Value + `"`
-						content = node
+// GetHTMLNode returns the node tree of the html string data
+func GetHTMLNode(data string) (*html.Node, error) {
+	return html.Parse(strings.NewReader(data))
+}
 
-						for _, e := range node.Attr {
-							if !strings.Contains(container, e.Key+`="`+e.Val+`"`) {
-								container += " " + e.Key + `="` + e.Val + `"`
-							}
-						}
-						container += `>`
-						break
+// GetElementNodes returns an array of html.Node iniside of htmlNode having the same properties as element e
+func (e *Element) GetElementNodes(htmlNode *html.Node) ([]*html.Node, error) {
+	var crawler func(*html.Node) []*html.Node
+	crawler = func(node *html.Node) (elements []*html.Node) {
+		if node.Type == html.ElementNode && node.Data == e.Typ {
+			var foundTags int
+			for _, tag := range e.Tags {
+			C:
+				for _, attr := range node.Attr {
+					if attr.Key == tag.Typ && attr.Val == tag.Value {
+						foundTags += 1
+						break C
 					}
 				}
-			} else {
-				container = `<` + node.Data + `>`
-				content = node
 			}
-			return
+			if len(e.Tags) == foundTags { // has found all tags of node
+				elements = append(elements, node)
+			}
 		}
-		for child := node.FirstChild; child != nil; child = child.NextSibling {
-			crawler(child)
+		for child := node.FirstChild; child != nil; child = child.NextSibling { // looking for nodes inside of all other nodes
+			elements = append(elements, crawler(child)...)
 		}
+		return elements
 	}
-	crawler(doc)
-	if content != nil {
-		return content, container, nil
+	if el := crawler(htmlNode); len(el) > 0 {
+		return el, nil
 	}
-	return nil, container, errors.New("Missing " + el.Typ + " with: " + el.Tag.Name + "='" + el.Tag.Value + "' in the node tree")
+	return nil, newErr(ErrMissingElement, "missing "+e.Typ+" in the node tree")
 }
 
-// renderNode converts a rendered html into string
-func renderNode(n *html.Node) string {
+// RenderNode returns the string representation of an html.Node
+func RenderNode(node *html.Node) string {
 	var buf bytes.Buffer
 	w := io.Writer(&buf)
-	html.Render(w, n)
+	html.Render(w, node)
 	return buf.String()
 }
 
-// GetContentInsideElement returns the inside of an html element
-func GetContentInsideElement(htm string, el Element) string {
-	doc, _ := html.Parse(strings.NewReader(htm))
-	bn, beg, err := GetHTMLElementContent(doc, el)
-	if err != nil {
-		logError(err, "Error getting html element: ")
-		return ""
+// GetTextOfNode returns the content of an html element
+func GetTextOfNode(node *html.Node, notRecursive bool) (text string) {
+	if node.Type == html.TextNode {
+		text += node.Data
 	}
-	return strings.Trim(renderNode(bn), beg)
-}
-
-// GetNestedHTMLElement returns the content of a html element inside of a bigger one
-func GetNestedHTMLElement(htm string, elements []Element) string {
-	var output string
-	for _, v := range elements {
-		if output != "" {
-			output = GetContentInsideElement(output, v)
-		} else {
-			output = GetContentInsideElement(htm, v)
+	if !notRecursive {
+		for c := node.FirstChild; c != nil; c = c.NextSibling {
+			text += GetTextOfNode(c, notRecursive)
 		}
 	}
-	return output
+	return
 }
