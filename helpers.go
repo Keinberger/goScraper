@@ -32,7 +32,7 @@ func newErr(typ ErrType, msg string) Error {
 }
 
 // formatString replaces str with the return value of a func specified in funcs,
-// if str contains the map key of funcs one may use an array of constant values
+// if str contains the map key of funcs one may use an array of variables
 // that can be passed into the function, as well, hence a function has to have
 // a string as the first argument (where str gets passed in) and an array
 // of interface{} as an optional second argument, for variables to be used inside of the func

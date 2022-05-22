@@ -41,7 +41,7 @@ type Element struct {
 
 // LookUpElement defines the data structure for an element to be looked up by the scraper
 type LookUpElement struct {
-	Element            `json:"element"` // make one element
+	Element            `json:"element"`
 	Settings           `json:"settings"`
 	ContentIsFollowURL *Website `json:"followURL"`
 	Index              int      `json:"index"`
@@ -49,9 +49,9 @@ type LookUpElement struct {
 
 // Website defines the website data type for the scraper
 type Website struct {
-	Seperator      string          `json:"seperator"`
 	URL            string          `json:"URL"`
 	LookUpElements []LookUpElement `json:"lookUpElements"`
+	Seperator      string          `json:"seperator"`
 }
 
 // Scrape scrapes the website w, returning the found elements in a string each seperated by Seperator
