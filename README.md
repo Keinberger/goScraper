@@ -23,7 +23,7 @@ import "github.com/keinberger/goScraper"
 
 ## Usage
 
-The package provides several exported functions to provide high functionality.
+The package provides several exported functions to provide high functionality.<br />
 However, the main scrape functions 
 ```go
 func (w Website) Scrape(funcs map[string]interface{}, vars ...interface{}) (string, error)
@@ -34,9 +34,10 @@ func (el lookUpElement) ScrapeTreeForElement(node *html.Node) (string, error)
 ```go
 func (e *Element) GetElementNodes(doc *html.Node) ([]*html.Node, error)
 ```
-should be the preffered way to use the scraper library.<br />
+should be the preffered way to use the scraper library.
+
 As these functions use the other exported functions, as well, it provides all the features of the library packed together
-and guided by only having to provide a minimal amount of input. For the main `Scrape()` function, the user input is scoped to only having to provide a custom Website `w`.
+and guided by only having to provide a minimal amount of input. For the main `Scrape()` function, the user input is scoped to only having to provide a custom Website variable.
 
 ### Example using `Scrape()`
 
@@ -127,23 +128,23 @@ func main() {
 ```
 
 ### Other exported functions
-Returns all html elements `[]*html.Node` found in an html code `htmlNode *html.Node` with the same properties as `e *Element`
+GetElementNodes returns all html elements `[]*html.Node` found in an html code `htmlNode *html.Node` with the same properties as `e *Element`
 ```go
 func (e *Element) GetElementNodes(htmlNode *html.Node) ([]*html.Node, error)
 ```
-Returns the content of an html element `node *html.Node`
+GetTextOfNodes returns the content of an html element `node *html.Node`
 ```go
 func GetTextOfNode(node *html.Node, notRecursive bool) (text string) 
 ```
-Returns the string representation of a `node *html.Node`
+Render Node returns the string representation of a `node *html.Node`
 ```go
 func RenderNode(node *html.Node) string
 ```
-Returns the node tree `*html.Node` of the html string data
+GetHTMLNode returns the node tree `*html.Node` of the html string data
 ```go
 func GetHTMLNode(data string) (*html.Node, error)
 ```
-Returns the HTML data of URL
+GetHTML returns the HTML data of URL
 ```go
 func GetHTML(URL string) (string, error)
 ```
