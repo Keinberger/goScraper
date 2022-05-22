@@ -136,7 +136,7 @@ GetTextOfNodes returns the content of an html element `node *html.Node`
 ```go
 func GetTextOfNode(node *html.Node, notRecursive bool) (text string) 
 ```
-Render Node returns the string representation of a `node *html.Node`
+RenderNode returns the string representation of a `node *html.Node`
 ```go
 func RenderNode(node *html.Node) string
 ```
