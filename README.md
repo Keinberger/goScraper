@@ -2,7 +2,7 @@
 godoc, (https://godoc.org), (https://pkg.go.dev)
 -->
 [![Build Status](https://app.travis-ci.com/Keinberger/goScraper.svg?token=ki5cZ9pSp5tPxqp4fztS&branch=main)](https://app.travis-ci.com/Keinberger/goScraper)
-[![Go Report Card](https://goreportcard.com/badge/github.com/keinberger/goServer)](https://goreportcard.com/report/github.com/keinberger/goServer)
+[![Go Report Card](https://goreportcard.com/badge/github.com/keinberger/goScraper)](https://goreportcard.com/report/github.com/keinberger/goScraper)
 
 # goScraper
 
