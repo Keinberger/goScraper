@@ -54,7 +54,7 @@ type Website struct {
 	Separator      string          `json:"separator"`
 }
 
-// Scrape scrapes the website w, returning the found elements in a string each seperated by Seperator
+// Scrape scrapes the website w, returning the found elements in a string each separated by Separator
 func (w Website) Scrape(funcs *map[string]interface{}, vars ...interface{}) (string, error) {
 	if funcs != nil {
 		vls := reflect.ValueOf(&w).Elem()
