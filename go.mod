@@ -1,4 +1,4 @@
-module scraper
+module github.com/keinberger/goScraper
 
 go 1.18
 
