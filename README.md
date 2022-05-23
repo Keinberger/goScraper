@@ -38,7 +38,7 @@ and guided by only having to provide a minimal amount of input. For the main `Sc
 
 ### Example using `Scrape()`
 
-This example provides a tutorial on how to scrape a website for specific html elements. The html elements will be returned chained-together, seperated by a custom seperator.
+This example provides a tutorial on how to scrape a website for specific html elements. The html elements will be returned chained-together, separated by a custom separator.
 
 The example will use a custom website variable, where the `Scrape()` function will be called upon. The arguments of the `Scrape()` function are optional and will not be needed in this example.
 ```go
