@@ -51,7 +51,7 @@ type LookUpElement struct {
 type Website struct {
 	URL            string          `json:"URL"`
 	LookUpElements []LookUpElement `json:"lookUpElements"`
-	Seperator      string          `json:"seperator"`
+	Separator      string          `json:"separator"`
 }
 
 // Scrape scrapes the website w, returning the found elements in a string each seperated by Seperator
@@ -88,7 +88,7 @@ func (w Website) Scrape(funcs *map[string]interface{}, vars ...interface{}) (str
 	for k, v := range elements {
 		elementString += v
 		if k != len(elements)-1 {
-			elementString += w.Seperator
+			elementString += w.Separator
 		}
 	}
 
