@@ -39,7 +39,7 @@ func TestScrape(t *testing.T) {
 	}
 	testMap["scrapeWebsite_TwoElementsAndSeperator"] = func(t *testing.T) {
 		testWebsite := Website{
-			Seperator: ", ",
+			Separator: ", ",
 			URL:       "https://www.wikipedia.org/wiki/Wikipedia",
 			LookUpElements: []LookUpElement{
 				{
