@@ -33,15 +33,15 @@ type Tag struct {
 	Value string `json:"value"`
 }
 
-// Element defines the data structure for an HTML element
-type Element struct {
+// HtmlElement defines the data structure for an HTML element
+type HtmlElement struct {
 	Typ  string `json:"typ"`
 	Tags []Tag  `json:"tags"`
 }
 
-// LookUpElement defines the data structure for an element to be looked up by the scraper
-type LookUpElement struct {
-	Element            `json:"element"`
+// Element defines the data structure for an element to be looked up by the scraper
+type Element struct {
+	HtmlElement        `json:"htmlElement"`
 	Settings           `json:"settings"`
 	ContentIsFollowURL *Website `json:"followURL"`
 	Index              int      `json:"index"`
@@ -49,9 +49,9 @@ type LookUpElement struct {
 
 // Website defines the website data type for the scraper
 type Website struct {
-	URL            string          `json:"URL"`
-	LookUpElements []LookUpElement `json:"lookUpElements"`
-	Separator      string          `json:"separator"`
+	URL       string    `json:"URL"`
+	Elements  []Element `json:"Elements"`
+	Separator string    `json:"separator"`
 }
 
 // Scrape scrapes the website w, returning the found elements in a string each separated by Separator
@@ -76,7 +76,7 @@ func (w Website) Scrape(funcs *map[string]interface{}, vars ...interface{}) (str
 	}
 
 	var elements []string
-	for _, el := range w.LookUpElements {
+	for _, el := range w.Elements {
 		if content, err := el.ScrapeTreeForElement(node); err != nil {
 			return "", err
 		} else {
@@ -96,8 +96,8 @@ func (w Website) Scrape(funcs *map[string]interface{}, vars ...interface{}) (str
 }
 
 // ScrapeTreeForElement scraped the node tree for a lookUpElement.Element and formats the content of it accordingly
-func (e *LookUpElement) ScrapeTreeForElement(nodeTree *html.Node) (content string, err error) {
-	nodes, err := e.Element.GetElementNodes(nodeTree)
+func (e *Element) ScrapeTreeForElement(nodeTree *html.Node) (content string, err error) {
+	nodes, err := e.HtmlElement.GetElementNodes(nodeTree)
 	if err != nil {
 		return
 	}
