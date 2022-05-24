@@ -52,9 +52,9 @@ import (
 func main() {
 	website := scraper.Website{
 		URL: "https://wikipedia.org/wiki/wikipedia",
-		LookUpElements: []scraper.LookUpElement{
+		Elements: []scraper.Element{
 			{
-				Element: scraper.Element{
+				HtmlElement: scraper.HtmlElement{
 					Typ: "h1",
 					Tags: []scraper.Tag{
 						{
@@ -65,7 +65,7 @@ func main() {
 				},
 			},
 			{
-				Element: scraper.Element{
+				HtmlElement: scraper.HtmlElement{
 					Typ: "td",
 					Tags: []scraper.Tag{
 						{
@@ -105,8 +105,8 @@ func main() {
 		panic(err)
 	}
 
-	lookUpElement := scraper.LookUpElement{
-		Element: scraper.Element{
+	element := scraper.Element{
+		HtmlElement: scraper.HtmlElement{
 			Typ: "li",
 			Tags: []scraper.Tag{
 				{
@@ -116,7 +116,7 @@ func main() {
 			},
 		},
 	}
-	content, err := lookUpElement.ScrapeTreeForElement(htmlNode)
+	content, err := element.ScrapeTreeForElement(htmlNode)
 	if err != nil {
 		panic(err)
 	}
