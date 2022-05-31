@@ -77,7 +77,7 @@ func main() {
 				Index: 0,
 			},
 		},
-		Seperator: ", ",
+		Separator: ", ",
 	}
 
 	scraped, err := website.Scrape(nil)
