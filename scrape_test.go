@@ -125,13 +125,17 @@ func TestScrape(t *testing.T) {
 			y, m, d := vars[0].(time.Time).Date()
 			var mon string
 			mo := strconv.Itoa(int(m))
+			day := strconv.Itoa(int(d))
 			if len(mo) == 1 {
-				for i := 0; i < len(mo); i++ {
-					mon += "0"
-				}
+				mon += "0"
 			}
 			mon += strconv.Itoa(int(m))
-			return strings.ReplaceAll(str, numericalDateStr, strconv.Itoa(y)+"/"+mon+"/"+strconv.Itoa(d))
+			if len(day) == 1 {
+				day = "0"
+				day += strconv.Itoa(int(d))
+			}
+			fmt.Println(strings.ReplaceAll(str, numericalDateStr, strconv.Itoa(y)+"/"+mon+"/"+day))
+			return strings.ReplaceAll(str, numericalDateStr, strconv.Itoa(y)+"/"+mon+"/"+day)
 		}
 
 		expected := " The Front Page"
