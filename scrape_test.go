@@ -132,8 +132,8 @@ func TestScrape(t *testing.T) {
 			mon += strconv.Itoa(int(m))
 			if len(day) == 1 {
 				day = "0"
+				day += strconv.Itoa(int(d))
 			}
-			day += strconv.Itoa(int(d))
 			fmt.Println(strings.ReplaceAll(str, numericalDateStr, strconv.Itoa(y)+"/"+mon+"/"+day))
 			return strings.ReplaceAll(str, numericalDateStr, strconv.Itoa(y)+"/"+mon+"/"+day)
 		}
