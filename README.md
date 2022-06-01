@@ -38,7 +38,7 @@ and guided by only having to provide a minimal amount of input. For the main `Sc
 
 ### Example using `Scrape()`
 
-This example provides a tutorial on how to scrape a website for specific html elements. The html elements will be returned chained-together, seperated by a custom seperator.
+This example provides a tutorial on how to scrape a website for specific html elements. The html elements will be returned chained-together, separated by a custom separator.
 
 The example will use a custom website variable, where the `Scrape()` function will be called upon. The arguments of the `Scrape()` function are optional and will not be needed in this example.
 ```go
@@ -52,9 +52,9 @@ import (
 func main() {
 	website := scraper.Website{
 		URL: "https://wikipedia.org/wiki/wikipedia",
-		LookUpElements: []scraper.LookUpElement{
+		Elements: []scraper.Element{
 			{
-				Element: scraper.Element{
+				HtmlElement: scraper.HtmlElement{
 					Typ: "h1",
 					Tags: []scraper.Tag{
 						{
@@ -65,7 +65,7 @@ func main() {
 				},
 			},
 			{
-				Element: scraper.Element{
+				HtmlElement: scraper.HtmlElement{
 					Typ: "td",
 					Tags: []scraper.Tag{
 						{
@@ -77,7 +77,7 @@ func main() {
 				Index: 0,
 			},
 		},
-		Seperator: ", ",
+		Separator: ", ",
 	}
 
 	scraped, err := website.Scrape(nil)
@@ -105,8 +105,8 @@ func main() {
 		panic(err)
 	}
 
-	lookUpElement := scraper.LookUpElement{
-		Element: scraper.Element{
+	element := scraper.Element{
+		HtmlElement: scraper.HtmlElement{
 			Typ: "li",
 			Tags: []scraper.Tag{
 				{
@@ -116,7 +116,7 @@ func main() {
 			},
 		},
 	}
-	content, err := lookUpElement.ScrapeTreeForElement(htmlNode)
+	content, err := element.ScrapeTreeForElement(htmlNode)
 	if err != nil {
 		panic(err)
 	}

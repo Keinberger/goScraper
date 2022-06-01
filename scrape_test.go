@@ -17,9 +17,9 @@ func TestScrape(t *testing.T) {
 	testMap["scrapeWebsite_OneElement"] = func(t *testing.T) {
 		testWebsite := Website{
 			URL: "https://www.wikipedia.org/wiki/Wikipedia",
-			LookUpElements: []LookUpElement{
+			Elements: []Element{
 				{
-					Element: Element{
+					HtmlElement: HtmlElement{
 						Typ: "h1",
 						Tags: []Tag{
 							{
@@ -41,9 +41,9 @@ func TestScrape(t *testing.T) {
 		testWebsite := Website{
 			Separator: ", ",
 			URL:       "https://www.wikipedia.org/wiki/Wikipedia",
-			LookUpElements: []LookUpElement{
+			Elements: []Element{
 				{
-					Element: Element{
+					HtmlElement: HtmlElement{
 						Typ: "h1",
 						Tags: []Tag{
 							{
@@ -54,7 +54,7 @@ func TestScrape(t *testing.T) {
 					},
 				},
 				{
-					Element: Element{
+					HtmlElement: HtmlElement{
 						Typ: "li",
 						Tags: []Tag{
 							{
@@ -76,9 +76,9 @@ func TestScrape(t *testing.T) {
 		strToBeReplaced := "{{INSERT_WIKIPEDIA}}"
 		testWebsite := Website{
 			URL: "https://en.wikipedia.org/wiki/" + strToBeReplaced,
-			LookUpElements: []LookUpElement{
+			Elements: []Element{
 				{
-					Element: Element{
+					HtmlElement: HtmlElement{
 						Typ: "h1",
 						Tags: []Tag{
 							{
@@ -105,9 +105,9 @@ func TestScrape(t *testing.T) {
 		numericalDateStr := "{{NUMERICAL_DATE}}" // 2022/05/22
 		testWebsite := Website{
 			URL: "https://www.nytimes.com/issue/todayspaper/{{NUMERICAL_DATE}}/todays-new-york-times",
-			LookUpElements: []LookUpElement{
+			Elements: []Element{
 				{
-					Element: Element{
+					HtmlElement: HtmlElement{
 						Typ: "h2",
 						Tags: []Tag{
 							{
@@ -154,8 +154,8 @@ func TestScrapeTreeForElement(t *testing.T) {
 	nodeTree, err := GetHTMLNode(testHTML)
 	require.NoError(t, err)
 
-	testLookUpElement := LookUpElement{
-		Element: Element{
+	testElement := Element{
+		HtmlElement: HtmlElement{
 			Typ: "",
 			Tags: []Tag{
 				{
@@ -166,11 +166,11 @@ func TestScrapeTreeForElement(t *testing.T) {
 		},
 		Settings: Settings{},
 	}
-	_ = testLookUpElement
+	_ = testElement
 
 	testMap["scrapeTreeForContent"] = func(t *testing.T) {
-		testLookUpElement := LookUpElement{
-			Element: Element{
+		testElement := Element{
+			HtmlElement: HtmlElement{
 				Typ: "p",
 				Tags: []Tag{
 					{
@@ -181,13 +181,13 @@ func TestScrapeTreeForElement(t *testing.T) {
 			},
 		}
 		expected := "This is the single element with one tag"
-		actual, err := testLookUpElement.ScrapeTreeForElement(nodeTree)
+		actual, err := testElement.ScrapeTreeForElement(nodeTree)
 		require.NoError(t, err)
 		assert.Equal(t, expected, actual)
 	}
 	testMap["elementIndexOutOfRange"] = func(t *testing.T) {
-		testLookUpElement := LookUpElement{
-			Element: Element{
+		testElement := Element{
+			HtmlElement: HtmlElement{
 				Typ: "div",
 				Tags: []Tag{
 					{
@@ -198,13 +198,13 @@ func TestScrapeTreeForElement(t *testing.T) {
 			},
 			Index: 2,
 		}
-		_, err := testLookUpElement.ScrapeTreeForElement(nodeTree)
+		_, err := testElement.ScrapeTreeForElement(nodeTree)
 		require.Error(t, err)
 		assert.Equal(t, "element index out of range", err.Error())
 	}
 	testMap["settingsReplacements"] = func(t *testing.T) {
-		testLookUpElement := LookUpElement{
-			Element: Element{
+		testElement := Element{
+			HtmlElement: HtmlElement{
 				Typ: "p",
 				Tags: []Tag{
 					{
@@ -225,13 +225,13 @@ func TestScrapeTreeForElement(t *testing.T) {
 			},
 		}
 		expected := "This_is_the_single_element_with_one_tag"
-		actual, err := testLookUpElement.ScrapeTreeForElement(nodeTree)
+		actual, err := testElement.ScrapeTreeForElement(nodeTree)
 		require.NoError(t, err)
 		assert.Equal(t, expected, actual)
 	}
 	testMap["settingsTrim"] = func(t *testing.T) {
-		testLookUpElement := LookUpElement{
-			Element: Element{
+		testElement := Element{
+			HtmlElement: HtmlElement{
 				Typ: "p",
 				Tags: []Tag{
 					{
@@ -249,13 +249,13 @@ func TestScrapeTreeForElement(t *testing.T) {
 			},
 		}
 		expected := "This is the elemnt which needs some trimming"
-		actual, err := testLookUpElement.ScrapeTreeForElement(nodeTree)
+		actual, err := testElement.ScrapeTreeForElement(nodeTree)
 		require.NoError(t, err)
 		assert.Equal(t, expected, actual)
 	}
 	testMap["settingsAddAfter"] = func(t *testing.T) {
-		testLookUpElement := LookUpElement{
-			Element: Element{
+		testElement := Element{
+			HtmlElement: HtmlElement{
 				Typ: "p",
 				Tags: []Tag{
 					{
@@ -271,13 +271,13 @@ func TestScrapeTreeForElement(t *testing.T) {
 			},
 		}
 		expected := "This is the single element with one tag, literally only one tag"
-		actual, err := testLookUpElement.ScrapeTreeForElement(nodeTree)
+		actual, err := testElement.ScrapeTreeForElement(nodeTree)
 		require.NoError(t, err)
 		assert.Equal(t, expected, actual)
 	}
 	testMap["settingsAddBefore"] = func(t *testing.T) {
-		testLookUpElement := LookUpElement{
-			Element: Element{
+		testElement := Element{
+			HtmlElement: HtmlElement{
 				Typ: "p",
 				Tags: []Tag{
 					{
@@ -293,13 +293,13 @@ func TestScrapeTreeForElement(t *testing.T) {
 			},
 		}
 		expected := "The element with only one tag: This is the single element with one tag"
-		actual, err := testLookUpElement.ScrapeTreeForElement(nodeTree)
+		actual, err := testElement.ScrapeTreeForElement(nodeTree)
 		require.NoError(t, err)
 		assert.Equal(t, expected, actual)
 	}
 	testMap["ContentIsFollowURL"] = func(t *testing.T) {
-		testLookUpElement := LookUpElement{
-			Element: Element{
+		testElement := Element{
+			HtmlElement: HtmlElement{
 				Typ: "a",
 				Tags: []Tag{
 					{
@@ -309,9 +309,9 @@ func TestScrapeTreeForElement(t *testing.T) {
 				},
 			},
 			ContentIsFollowURL: &Website{
-				LookUpElements: []LookUpElement{
+				Elements: []Element{
 					{
-						Element: Element{
+						HtmlElement: HtmlElement{
 							Typ: "h1",
 							Tags: []Tag{
 								{
@@ -325,7 +325,7 @@ func TestScrapeTreeForElement(t *testing.T) {
 			},
 		}
 		expected := "Wikipedia"
-		actual, err := testLookUpElement.ScrapeTreeForElement(nodeTree)
+		actual, err := testElement.ScrapeTreeForElement(nodeTree)
 		require.NoError(t, err)
 		assert.Equal(t, expected, actual)
 	}

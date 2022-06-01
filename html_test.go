@@ -29,6 +29,8 @@ var testHTML string = `
 						<div class="hasDuplicate">This is the second element of the duplicate</div>
 						<p id="elementToBeTrimmed"> This is the elemnt which needs some trimming </p>
 						<a href="https://wikipedia.com/wiki/Wikipedia" id="websiteLink">https://wikipedia.com/wiki/Wikipedia</a>
+						<p id="nestedElement">This is some <span id="insideOfNestedElement">nested text</span></p>
+						<p id="emptyElement"></p>
 					</div>
 				</div>
 			</header>
@@ -45,20 +47,20 @@ func TestGetElementNodes(t *testing.T) {
 	testMap := make(map[string]func(t *testing.T), 0)
 
 	testMap["testSingleElementWithoutTag"] = func(t *testing.T) {
-		testElement := Element{
+		testElement := HtmlElement{
 			Typ: "span",
 		}
 
 		nodes, err := testElement.GetElementNodes(documentNode)
 		require.NoError(t, err)
-		assert.Equal(t, 1, len(nodes))
+		assert.Equal(t, 2, len(nodes))
 		node := nodes[0]
 
 		assert.Equal(t, testElement.Typ, node.DataAtom.String())
 	}
 
 	testMap["testSingleElementWithOneTag"] = func(t *testing.T) {
-		testElement := Element{
+		testElement := HtmlElement{
 			Typ: "p",
 			Tags: []Tag{
 				{
@@ -83,7 +85,7 @@ func TestGetElementNodes(t *testing.T) {
 	}
 
 	testMap["testSingleElementWithMultipleTags"] = func(t *testing.T) {
-		testElement := Element{
+		testElement := HtmlElement{
 			Typ: "p",
 			Tags: []Tag{
 				{
@@ -112,7 +114,7 @@ func TestGetElementNodes(t *testing.T) {
 	}
 
 	testMap["testMultipleEquivalentElements"] = func(t *testing.T) {
-		testElement := Element{
+		testElement := HtmlElement{
 			Typ: "div",
 			Tags: []Tag{
 				{
@@ -136,7 +138,7 @@ func TestGetElementNodes(t *testing.T) {
 	}
 
 	testMap["testReturnCustomErr"] = func(t *testing.T) {
-		testElement := Element{
+		testElement := HtmlElement{
 			Typ: "div",
 			Tags: []Tag{
 				{
@@ -160,7 +162,7 @@ func TestRenderNode(t *testing.T) {
 	require.NoError(t, err)
 
 	expected := `<p id="singleElement_OneTag">This is the single element with one tag</p>`
-	testElement := Element{
+	testElement := HtmlElement{
 		Typ: "p",
 		Tags: []Tag{
 			{
@@ -182,21 +184,49 @@ func TestGetTextOfNode(t *testing.T) {
 	documentNode, err := GetHTMLNode(testHTML)
 	require.NoError(t, err)
 
-	expected := `This is the single element with one tag`
-	testElement := Element{
-		Typ: "p",
-		Tags: []Tag{
-			{
-				Typ:   "id",
-				Value: "singleElement_OneTag",
+	testMap := make(map[string]func(t *testing.T), 0)
+
+	testMap["testReturnTextOfNode"] = func(t *testing.T) {
+		expected := `This is some nested text`
+		testElement := HtmlElement{
+			Typ: "p",
+			Tags: []Tag{
+				{
+					Typ:   "id",
+					Value: "nestedElement",
+				},
 			},
-		},
+		}
+
+		nodes, err := testElement.GetElementNodes(documentNode)
+		require.NoError(t, err)
+		assert.Equal(t, 1, len(nodes))
+		node := nodes[0]
+
+		assert.Equal(t, expected, GetTextOfNode(node, false))
 	}
 
-	nodes, err := testElement.GetElementNodes(documentNode)
-	require.NoError(t, err)
-	assert.Equal(t, 1, len(nodes))
-	node := nodes[0]
+	testMap["testReturnTextOfNode_noneRecursive"] = func(t *testing.T) {
+		expected := `This is some `
+		testElement := HtmlElement{
+			Typ: "p",
+			Tags: []Tag{
+				{
+					Typ:   "id",
+					Value: "nestedElement",
+				},
+			},
+		}
 
-	assert.Equal(t, expected, GetTextOfNode(node, false))
+		nodes, err := testElement.GetElementNodes(documentNode)
+		require.NoError(t, err)
+		assert.Equal(t, 1, len(nodes))
+		node := nodes[0]
+
+		assert.Equal(t, expected, GetTextOfNode(node, true))
+	}
+
+	for testName, testFunc := range testMap {
+		t.Run(testName, testFunc)
+	}
 }

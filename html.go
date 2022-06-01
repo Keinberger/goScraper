@@ -20,7 +20,7 @@ func GetHTML(URL string) (string, error) {
 
 	html, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return "", nil
+		return "", err
 	}
 
 	return string(html), nil
@@ -32,7 +32,7 @@ func GetHTMLNode(data string) (*html.Node, error) {
 }
 
 // GetElementNodes returns an array of html.Node iniside of htmlNode having the same properties as element e
-func (e *Element) GetElementNodes(htmlNode *html.Node) ([]*html.Node, error) {
+func (e *HtmlElement) GetElementNodes(htmlNode *html.Node) ([]*html.Node, error) {
 	var crawler func(*html.Node) []*html.Node
 	crawler = func(node *html.Node) (elements []*html.Node) {
 		if node.Type == html.ElementNode && node.Data == e.Typ {
@@ -78,6 +78,8 @@ func GetTextOfNode(node *html.Node, notRecursive bool) (text string) {
 		for c := node.FirstChild; c != nil; c = c.NextSibling {
 			text += GetTextOfNode(c, notRecursive)
 		}
+	} else if c := node.FirstChild; c != nil {
+		text += GetTextOfNode(c, notRecursive)
 	}
 	return
 }
